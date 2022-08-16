@@ -1,11 +1,18 @@
 cmake_minimum_required(VERSION 3.9)
-project(readerwriterqueue VERSION 1.0.0)
+project(ReaderWriterQueue VERSION 1.0.0)
+set (APP_NAME "${PROJECT_NAME}")
 
-include(GNUInstallDirs)
+include(FetchContent)
 
-add_library(${PROJECT_NAME} INTERFACE)
+FetchContent_Declare(
+  readerwriterqueue
+  GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue
+  GIT_TAG           master
+)
 
-target_include_directories(readerwriterqueue INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+FetchContent_MakeAvailable(readerwriterqueue)
 
-install(FILES atomicops.h readerwriterqueue.h readerwritercircularbuffer.h LICENSE.md
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+add_executable (${APP_NAME} main.cpp)
+#add_library(my_target main.cpp)
+#target_link_libraries(my_target PUBLIC readerwriterqueue)
+target_link_libraries(${APP_NAME} PUBLIC readerwriterqueue)
