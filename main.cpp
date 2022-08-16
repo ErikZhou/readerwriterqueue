@@ -1,26 +1,40 @@
-#include <readerwriterqueue.h>
+#include <chrono>
+#include <iostream>
+#include <thread>
 
-int main()
-{
+#include "readerwriterqueue.h"
 
-    using namespace moodycamel;
+using namespace moodycamel;
+int main(void) {
+  // 两个线程，一个线程写数据一个线程读数据
+  // 预先分配内存
+  ReaderWriterQueue<int> q(10);
+  std::cout << q.max_capacity() << std::endl;
 
-    ReaderWriterQueue<int> q(100);       // Reserve space for at least 100 elements up front
+  int val = 1;
+  int count = 100;
+  std::thread writer([&]() {
+    while (true && count>0) {
+      std::cout << "++writer\t" << val << "\n";
+      q.enqueue(val++);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      --count;
+    }
+    });
 
-    q.enqueue(17);                       // Will allocate memory if the queue is full
-    bool succeeded = q.try_enqueue(18);  // Will only succeed if the queue has an empty slot (never allocates)
-    assert(succeeded);
+  std::thread reader([&]() {
+    int tmp;
+    while (true) {
+      if (!q.try_dequeue(tmp)) {
+        continue;
+      }
+      std::cout << "--reader\t"<<tmp << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+    });
 
-    int number;
-    succeeded = q.try_dequeue(number);  // Returns false if the queue was empty
+  writer.join();
+  reader.join();
 
-    assert(succeeded && number == 17);
-
-    // You can also peek at the front item of the queue (consumer only)
-    int* front = q.peek();
-    assert(*front == 18);
-    succeeded = q.try_dequeue(number);
-    assert(succeeded && number == 18);
-    front = q.peek();
-    assert(front == nullptr);           // Returns nullptr if the queue was empty
+  return 0;
 }
