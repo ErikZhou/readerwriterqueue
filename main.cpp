@@ -6,21 +6,17 @@
 #include "readerwriterqueue.h"
 
 using namespace moodycamel;
-int main(void) {
-  // 两个线程，一个线程写数据一个线程读数据
-  // 预先分配内存
-  //ReaderWriterQueue<int> q(10);
-  BlockingReaderWriterQueue<std::string> q;
-  std::cout << q.max_capacity() << std::endl;
 
-  int val = 0;
-  int count = 10;
-  std::string str("");
-  std::thread writer([&]() {
+class Worker {
+ public:
+
+  void Write() {
+    std::string str("");
+    int count = 10;
+    int val = 0;
     while (true && count > 0) {
-      
-      //q.enqueue(val++);
-      //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      // q.enqueue(val++);
+      // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
       str = "No." + std::to_string(val) + "-";
       for (int i = 0; i < 10; ++i) {
@@ -31,23 +27,22 @@ int main(void) {
       ++val;
       --count;
     }
-    });
+  }
 
-  std::thread reader([&]() {
-
+  void Read() {
     std::string tmp;
-    //while (true) {
-    //  if (!q.try_dequeue(tmp)) {
-    //    continue;
-    //  }
-    //  std::cout << "--reader\t"<<tmp << std::endl;
-    //  std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    //}
+    // while (true) {
+    //   if (!q.try_dequeue(tmp)) {
+    //     continue;
+    //   }
+    //   std::cout << "--reader\t"<<tmp << std::endl;
+    //   std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    // }
 
     //
 #if 1
-   // for (int i = 0; i != 100; ++i) {
-      // Fully-blocking:
+    // for (int i = 0; i != 100; ++i) {
+    // Fully-blocking:
     while (true) {
       q.wait_dequeue(tmp);
       std::cout << "--reader\t" << tmp << std::endl;
@@ -62,7 +57,25 @@ int main(void) {
     }
 
 #endif
-    });
+  }
+
+  private:
+  BlockingReaderWriterQueue<std::string> q;
+};
+
+
+int main(void) {
+  // 两个线程，一个线程写数据一个线程读数据
+  // 预先分配内存
+  //ReaderWriterQueue<int> q(10);
+  //std::cout << q.max_capacity() << std::endl;
+
+  int val = 0;
+  
+  std::string str("");
+  Worker worker;
+  std::thread writer(&Worker::Write, &worker);
+  std::thread reader(&Worker::Read, &worker);
 
   writer.join();
   reader.join();
